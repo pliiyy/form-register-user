@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistem Registrasi & Autentikasi Pengguna</title>
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/path/to/favicon.png" />
+
+    <!-- Font Modern -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"
+    />
+
+    <!-- Library TensorFlow dan Face Detection -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.12.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/blazeface@0.0.5"></script>
+
+    <!-- CSS Custom -->
+    <style>
+      :root {
+        /* Pallete Warna Modern */
+        --color-primary: #0d47a1;
+        --color-primary-light: #1976d2;
+        --color-secondary: #ff6f00;
+        --color-secondary-light: #ff8f00;
+
+        /* Warna Netral */
+        --color-white: #ffffff;
+        --color-black: #121212;
+        --color-gray-100: #f5f5f5;
+        --color-gray-200: #eeeeee;
+        --color-gray-300: #e0e0e0;
+        --color-gray-400: #bdbdbd;
+
+        /* Gradient */
+        --gradient-primary: linear-gradient(
+          135deg,
+          var(--color-primary) 0%,
+          var(--color-primary-light) 100%
+        );
+        --gradient-secondary: linear-gradient(
+          135deg,
+          var(--color-secondary) 0%,
+          var(--color-secondary-light) 100%
+        );
+
+        /* Shadow */
+        --shadow-subtle: 0 4px 6px rgba(0, 0, 0, 0.1);
+        --shadow-medium: 0 10px 20px rgba(0, 0, 0, 0.15);
+        --shadow-strong: 0 15px 25px rgba(0, 0, 0, 0.2);
+
+        /* Transisi */
+        --transition-fast: all 0.2s ease-in-out;
+        --transition-normal: all 0.3s ease-in-out;
+        --transition-slow: all 0.5s ease-in-out;
+      }
+
+      /* Reset dan Base */
+      *,
+      *::before,
+      *::after {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background: var(--gradient-primary);
+        color: var(--color-white);
+        line-height: 1.6;
+        overflow-x: hidden;
+      }
+
+      /* Authentication Container */
+      .authentication-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        padding: 20px;
+        perspective: 1000px;
+      }
+
+      .auth-wrapper {
+        width: 100%;
+        max-width: 1200px;
+      }
+
+      .auth-box {
+        background: var(--color-gray-100);
+        border-radius: 20px;
+        box-shadow: var(--shadow-strong);
+        display: flex;
+        overflow: hidden;
+        min-height: 700px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: var(--transition-normal);
+      }
+
+      /* Navigasi Autentikasi */
+      .auth-navigation {
+        display: flex;
+        background: var(--color-gray-100);
+        border-bottom: 2px solid var(--color-gray-200);
+      }
+
+      .nav-item {
+        flex: 1;
+        padding: 15px;
+        text-align: center;
+        cursor: pointer;
+        font-weight: 600;
+        color: var(--color-gray-400);
+        transition: var(--transition-fast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .nav-item i {
+        margin-right: 10px;
+        font-size: 1.2em;
+      }
+
+      .nav-item.active {
+        color: var(--color-primary);
+        background: linear-gradient(
+          to right,
+          rgba(13, 71, 161, 0.1),
+          rgba(25, 118, 210, 0.1)
+        );
+        border-bottom: 3px solid var(--color-primary);
+      }
+
+      /* Form Container */
+      .form-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        padding: 40px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .auth-form {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .auth-form.active {
+        display: flex;
+      }
+
+      /* Header Formulir */
+      .auth-form header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .auth-form header h2 {
+        font-size: 2em;
+        color: var(--color-primary);
+        margin-bottom: 10px;
+      }
+
+      .auth-form header p {
+        color: var(--color-primary);
+      }
+
+      /* Grup Input */
+      .form-group {
+        position: relative;
+        margin-bottom: 20px;
+        display: flex;
+      }
+
+      .input-group {
+        display: flex;
+        align-items: center;
+        border: 2px solid var(--color-primary-light); /* Change border color to match the theme */
+        border-radius: 10px;
+        overflow: hidden;
+        transition: var(--transition-fast);
+      }
+
+      .input-group:focus-within {
+        border-color: var(
+          --color-primary
+        ); /* Change border color to match the theme */
+        box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.1); /* Change box shadow to match the theme */
+      }
+
+      .input-icon {
+        padding: 10px;
+        background: var(
+          --color-primary-light
+        ); /* Change background color to match the theme */
+        color: var(--color-white); /* Change icon color to white */
+      }
+
+      .input-group input {
+        flex-grow: 1;
+        border: none;
+        padding: 12px;
+        font-size: 1em;
+        background: transparent;
+        color: var(--color-primary); /* Change text color to match the theme */
+      }
+
+      .input-group input:focus {
+        outline: none;
+      }
+
+      .toggle-password {
+        padding: 10px;
+        cursor: pointer;
+        color: var(--color-white);
+        background-color: var(--color-primary);
+        border-radius: 5px;
+      }
+      .toggle-password:hover {
+        background-color: var(--color-primary-light);
+      }
+
+      .input-error {
+        color: #dc3545;
+        font-size: 0.8em;
+        margin-top: 5px;
+      } /* Missing closing bracket added here */
+      /* Tombol */
+      .btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: var(--transition-fast);
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: var(--gradient-secondary);
+        color: var(--color-white);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-medium);
+      }
+
+      .btn-primary:disabled {
+        background: var(--color-gray-300);
+        cursor: not-allowed;
+      }
+
+      /* Wizard Progress */
+      .registration-wizard {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+      }
+
+      .wizard-step {
+        flex: 1;
+        text-align: center;
+        padding: 10px;
+        background: var(--color-gray-200);
+        border-radius: 5px;
+        margin: 0 5px;
+        transition: var(--transition-fast);
+      }
+
+      .wizard-step span {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        border-radius: 50%;
+        background: var(--color-gray-400);
+        color: var(--color-white);
+        margin-bottom: 10px;
+      }
+
+      .wizard-step.active span,
+      .wizard-step[data-step="2"] span,
+      .wizard-step[data-step="3"] span {
+        background: var(
+          --color-primary
+        ); /* Change background color to match the theme */
+      }
+      .wizard-step p {
+        color: var(--color-primary); /* Add text color to match the theme */
+      }
+
+      /* Upload Foto */
+      .photo-upload-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      .upload-dropzone {
+        border: 2px dashed var(--color-primary-light);
+        border-radius: 10px;
+        padding: 40px;
+        text-align: center;
+        cursor: pointer;
+        transition: var(--transition-fast);
+      }
+
+      .upload-dropzone:hover {
+        background: rgba(25, 118, 210, 0.1);
+      }
+
+      .photo-preview img {
+        max-width: 300px;
+        border-radius: 10px;
+        box-shadow: var(--shadow-subtle);
+      }
+
+      .upload-dropzone p,
+      .upload-dropzone small,
+      .photo-preview img {
+        color: var(--color-primary); /* Change text color to match the theme */
+      }
+
+      /* Verifikasi Kamera */
+      .camera-verification-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+      }
+
+      #camera-input {
+        max-width: 400px;
+        border-radius: 10px;
+        box-shadow: var(--shadow-medium);
+      }
+
+      .camera-verification-container p {
+        color: var(--color-primary); /* Change text color to match the theme */
+        font-weight: bold; /* Optional: make the text bold */
+      }
+
+      /* Animasi */
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        10%,
+        30%,
+        50%,
+        70%,
+        90% {
+          transform: translateX(-5px);
+        }
+        20%,
+        40%,
+        60%,
+        80% {
+          transform: translateX(5px);
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .auth-box {
+          flex-direction: column;
+          max-height: 90vh;
+          overflow-y: auto;
+        }
+
+        .form-container {
+          padding: 20px;
+        }
+      }
+
+      /* Background Dekoratif */
+      .auth-background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        overflow: hidden;
+      }
+
+      .background-shape {
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.1;
+      }
+
+      .background-shape.shape-1 {
+        top: -100px;
+        left: -100px;
+        width: 400px;
+        height: 400px;
+        background: var(--gradient-primary);
+      }
+
+      .background-shape.shape-2 {
+        bottom: -100px;
+        right: -100px;
+        width: 300px;
+        height: 300px;
+        background: var(--gradient-secondary);
+      }
+
+      /* Modal */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modal-dialog {
+        background-color: var(--color-gray-100);
+        border-radius: 15px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: var(--shadow-strong);
+        position: relative;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        padding: 20px;
+        border-bottom: 1px solid var(--color-gray-200);
+      }
+
+      .modal-body {
+        padding: 20px;
+        text-align: center;
+      }
+
+      .modal-footer {
+        display: flex;
+        justify-content: center;
+        padding: 20px;
+        border-top: 1px solid var(--color-gray-200);
+      }
+
+      /* CUSTOM BY SYIHABUDIN */
+      .hide-step {
+        display: none;
+      }
+      .form-group label {
+        width: 200px;
+      }
+      .form-group input {
+        padding: 5px;
+      }
+      .form-actions {
+        display: flex;
+        justify-content: center;
+        margin: 30px 5px;
+      }
+      .register-password input {
+        border: none;
+      }
+      .register-password {
+        border: 1px solid gray;
+        border-radius: 5px;
+        padding: 2px;
+      }
+      #invalid-photo {
+        text-align: center;
+        color: rgb(240, 39, 39);
+      }
+      .recog-wrapper {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        align-items: center;
+      }
+      .step2-wrapper {
+        display: flex;
+        gap: 5px;
+        justify-content: center;
+      }
+      .step2-wrapper div {
+        flex: 1;
+      }
+      .invalid-recog-wrap {
+        width: 50%;
+        margin: 10px auto;
+        border: 2px solid gray;
+        padding: 10px;
+      }
+      /* KYC */
+      video {
+        width: 100%;
+        max-width: 600px;
+        border: 1px solid #ccc;
+        margin: 10px auto;
+        transform: scaleX(-1); /* Mirroring video for better user experience */
+      }
+      #canvasVideo {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 9;
+      }
+      .container-video {
+        position: relative;
+        /* display: flex;
+        justify-content: center; */
+      }
+      .btn-video-wrap {
+        display: flex;
+        justify-content: center;
+      }
+      .btn-video-wrap .btn {
+        background-color: rgb(39, 39, 246);
+        color: rgb(244, 243, 243);
+        margin: 10px;
+      }
+      #screenshoot {
+        margin-top: 20px;
+        max-width: 100%;
+        border: 2px solid #000;
+      }
+      #take-photo-wrap {
+        position: absolute;
+        bottom: 10px;
+        width: 65%;
+        height: 100px;
+        margin: 10px auto;
+        display: flex;
+        justify-content: center;
+      }
+      #take-photo {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        border: 1px solid rgb(16, 16, 210);
+        background-color: rgb(16, 16, 210);
+        cursor: pointer;
+        z-index: 10;
+        display: none;
+      }
+      #take-photo:hover {
+        transform: scale(0.98);
+      }
+      .modal-new {
+        display: none; /* Hidden by default */
+        position: fixed; /* Stay in place */
+        z-index: 1; /* Sit on top */
+        left: 0;
+        top: 0;
+        width: 100%; /* Full width */
+        height: 100%; /* Full height */
+        overflow: auto; /* Enable scroll if needed */
+        background-color: rgb(0, 0, 0); /* Fallback color */
+        background-color: rgba(0, 0, 0, 0.4); /* Black w/ opacity */
+      }
+
+      /* Modal Content/Box */
+      .modal-content-new {
+        background-color: var(--color-gray-100);
+        margin: 15% auto; /* 15% from the top and centered */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%; /* Could be more or less, depending on screen size */
+      }
+
+      /* The Close Button */
+      .close-new {
+        color: var(--color-gray-400);
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+      }
+
+      .close-new:hover,
+      .close-new:focus {
+        color: var(--color-black);
+        text-decoration: none;
+        cursor: pointer;
+      }
+      .personal-data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+      }
+
+      .personal-data-table th,
+      .personal-data-table td {
+        border: 1px solid var(--color-primary-light); /* Change border color to match the theme */
+        padding: 10px;
+        text-align: left;
+      }
+
+      .personal-data-table th {
+        background-color: var(
+          --color-primary-light
+        ); /* Change background color to match the theme */
+        color: var(--color-white); /* Change text color to white */
+        font-weight: 600;
+      }
+
+      .personal-data-table td input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid var(--color-primary-light); /* Change border color to match the theme */
+        border-radius: 5px;
+        box-sizing: border-box;
+      }
+
+      .personal-data-table td input:focus {
+        border-color: var(
+          --color-secondary
+        ); /* Change border color to match the theme */
+        box-shadow: 0 0 0 3px rgba(255, 111, 0, 0.1); /* Change box shadow to match the theme */
+        outline: none;
+      }
+      .personal-data-table tr {
+        border-bottom: 1px solid var(--color-gray-300); /* Add a bottom border to each row */
+      }
+      .form-footer {
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .form-footer p {
+        margin: 10px 0;
+        color: var(--color-primary); /* Add this line to style the text */
+      }
+      .form-footer a {
+        color: var(--color-secondary); /* Add this line to style the link */
+      }
+
+      .social-login {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+      }
+
+      .social-login button {
+        background: none;
+        border: none;
+        cursor: pointer;
+      }
+
+      .forgot-password {
+        display: block;
+        text-align: center;
+        margin-top: 10px;
+        color: var(--color-primary);
+        text-decoration: none;
+      }
+
+      .forgot-password:hover {
+        text-decoration: underline;
+      }
+      .register-password span {
+        cursor: pointer;
+        color: var(--color-primary);
+        padding: 5px;
+      }
+      .register-password span:hover {
+        color: var(--color-primary-light);
+      }
+      .personal-data-table th,
+      .personal-data-table td {
+        border: 1px solid var(--color-white); /* Change border color to white */
+        padding: 10px;
+        text-align: left;
+      }
+      .personal-data-table tr {
+        border-bottom: 1px solid var(--color-white); /* Change border color to white */
+      }
+      #invalid-recog p,
+      #invalid-recog div {
+        color: var(--color-primary); /* Change text color to match the theme */
+      }
+      .modal-body p,
+      .modal-header h3 {
+        color: var(--color-primary); /* Change text color to match the theme */
+      }
+      #login-success-message span,
+      #login-time,
+      .modal-content-new p,
+      .modal-content-new .login-success {
+        color: var(--color-primary); /* Change text color to match the theme */
+      }
+    </style>
+  </head>
+  <body>
+    <main class="authentication-container">
+      <section class="auth-wrapper">
+        <div class="auth-box">
+          <!-- Navigasi Autentikasi -->
+          <nav class="auth-navigation">
+            <div class="nav-item active" data-target="login">
+              <i class="bi bi-person-fill"></i> Login
+            </div>
+            <div class="nav-item" data-target="register">
+              <i class="bi bi-person-plus-fill"></i> Registrasi
+            </div>
+          </nav>
+
+          <!-- Container Formulir -->
+          <div class="form-container">
+            <!-- Formulir Login -->
+            <form id="login-form" class="auth-form login-form active">
+              <header>
+                <h2>Selamat Datang Kembali</h2>
+                <p>Silakan masuk ke akun Anda</p>
+              </header>
+
+              <div class="form-group">
+                <div class="input-group">
+                  <span class="input-icon"><i class="bi bi-person"></i></span>
+                  <input
+                    type="text"
+                    id="login-username"
+                    name="username"
+                    placeholder="Username"
+                    required
+                    maxlength="20"
+                  />
+                </div>
+                <div class="input-error" id="login-username-error"></div>
+              </div>
+
+              <div class="form-group">
+                <div class="input-group">
+                  <span class="input-icon"><i class="bi bi-lock"></i></span>
+                  <input
+                    type="password"
+                    id="login-password"
+                    name="password"
+                    placeholder="Password"
+                    required
+                    maxlength="20"
+                  />
+                  <span class="toggle-password" id="toggle-password"
+                    ><i class="bi bi-eye"></i
+                  ></span>
+                </div>
+                <div class="input-error" id="login-password-error"></div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-primary" id="start-login">
+                  <i class="bi bi-box-arrow-in-right"></i> Masuk
+                </button>
+              </div>
+
+              <a href="#" class="forgot-password"
+                >Hubungi admin apabila anda lupa password</a
+              >
+
+              <footer class="form-footer">
+                <p>
+                  Belum punya akun? <a href="#" id="goToRegis">Registrasi</a>
+                </p>
+                <p>Atau masuk dengan</p>
+                <div class="social-login">
+                  <button type="button" class="btn-social google">
+                    <i class="bi bi-google"></i>
+                  </button>
+                  <button type="button" class="btn-social facebook">
+                    <i class="bi bi-facebook"></i>
+                  </button>
+                </div>
+              </footer>
+            </form>
+
+            <!-- Formulir Registrasi -->
+            <form id="register-form" class="auth-form register-form">
+              <header>
+                <h2>Buat Akun Baru</h2>
+                <p>Lengkapi informasi pribadi Anda</p>
+              </header>
+
+              <!-- Wizard Progress -->
+              <div class="registration-wizard">
+                <div
+                  class="wizard-step active"
+                  data-step="1"
+                  step-name="step-personal-info"
+                >
+                  <span>1</span>
+                  <p>Data Pribadi</p>
+                </div>
+                <div
+                  class="wizard-step"
+                  data-step="2"
+                  step-name="step-upload-photo"
+                >
+                  <span>2</span>
+                  <p>Upload Foto</p>
+                </div>
+                <div
+                  class="wizard-step"
+                  data-step="3"
+                  step-name="step-face-verification"
+                >
+                  <span>3</span>
+                  <p>Verifikasi Wajah</p>
+                </div>
+              </div>
+
+              <!-- Step 1: Data Pribadi -->
+              <div
+                class="registration-step form-step active step-personal-info"
+                id="step-personal-info"
+              >
+                <div class="form-group">
+                  <table class="personal-data-table">
+                    <tr>
+                      <th>Nama Lengkap</th>
+                      <td>
+                        <input
+                          type="text"
+                          id="register-fullname"
+                          name="fullname"
+                          placeholder="Masukkan nama lengkap"
+                          required
+                          oninput="capitalizeWords(this)"
+                        />
+                        <div class="input-error" id="fullname-error"></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Username</th>
+                      <td>
+                        <input
+                          type="text"
+                          id="register-username"
+                          name="username"
+                          placeholder="Pilih username"
+                          required
+                          maxlength="20"
+                        />
+                        <div class="input-error" id="username-error"></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Password</th>
+                      <td>
+                        <div class="register-password">
+                          <input
+                            type="password"
+                            id="register-password"
+                            name="password"
+                            placeholder="Buat password"
+                            required
+                            maxlength="20"
+                          />
+                          <span id="toggle-register-password"
+                            ><i class="bi bi-eye"></i
+                          ></span>
+                        </div>
+                        <div class="input-error" id="password-error"></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Konfirmasi Password</th>
+                      <td>
+                        <div class="register-password">
+                          <input
+                            type="password"
+                            id="register-confirm-password"
+                            name="confirm-password"
+                            placeholder="Konfirmasi password"
+                            required
+                            maxlength="20"
+                          />
+                          <span id="toggle-register-confirm-password"
+                            ><i class="bi bi-eye"></i
+                          ></span>
+                        </div>
+                        <div
+                          class="input-error"
+                          id="confirm-password-error"
+                        ></div>
+                      </td>
+                    </tr>
+                    <tr>
+                      <th>Nomor WhatsApp</th>
+                      <td>
+                        <input
+                          type="tel"
+                          id="register-whatsapp"
+                          name="whatsapp"
+                          placeholder="Nomor WhatsApp aktif"
+                          required
+                        />
+                        <div class="input-error" id="whatsapp-error"></div>
+                      </td>
+                    </tr>
+                  </table>
+                </div>
+
+                <div class="form-actions">
+                  <button
+                    type="button"
+                    class="btn btn-next"
+                    data-target="step-upload-photo"
+                    data-current="step-personal-info"
+                    disabled="true"
+                  >
+                    Lanjutkan <i class="bi bi-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Step 2: Upload Foto -->
+              <div
+                class="registration-step form-step hide-step step-upload-photo"
+                id="step-upload-photo"
+              >
+                <div class="photo-upload-container">
+                  <input
+                    type="file"
+                    id="register-photo"
+                    name="profile-photo"
+                    accept=".jpg,.jpeg"
+                    hidden
+                  />
+                  <label for="register-photo" class="upload-dropzone">
+                    <i class="bi bi-cloud-upload"></i>
+                    <p>Klik atau seret foto profil JPG</p>
+                    <small>Ukuran 50-500 KB</small>
+                  </label>
+                  <p id="invalid-photo"></p>
+                  <div class="step2-wrapper">
+                    <div class="photo-preview" id="photo-preview-container">
+                      <img id="photo-preview" src="#" alt="Pratinjau Foto" />
+                      <div
+                        class="face-detection-overlay"
+                        id="face-detection-result"
+                      ></div>
+                    </div>
+                    <div class="photo-preview">
+                      <canvas id="canvas"></canvas>
+                    </div>
+                  </div>
+                </div>
+                <div class="invalid-recog-wrap">
+                  <div id="invalid-recog"></div>
+                </div>
+
+                <div class="form-actions">
+                  <button type="button" class="btn btn-prev">
+                    <i class="bi bi-arrow-left"></i> Kembali
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn-next"
+                    disabled
+                    data-target="step-face-verification"
+                    id="recog"
+                  >
+                    Lanjutkan <i class="bi bi-arrow-right"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Step 3: Verifikasi Wajah -->
+              <div
+                class="registration-step form-step hide-step step-face-verification"
+                id="step-face-verification"
+              >
+                <div class="camera-verification-container">
+                  <div class="btn-video-wrap">
+                    <button type="button" class="btn active" id="start-video">
+                      Mulai
+                    </button>
+                  </div>
+                  <div class="container-video">
+                    <video
+                      id="video"
+                      width="600"
+                      height="400"
+                      style="margin: 10px auto"
+                      autoplay
+                    ></video>
+                    <canvas id="canvasVideo"></canvas>
+                    <div id="take-photo-wrap">
+                      <button id="take-photo" type="button"></button>
+                    </div>
+                  </div>
+                  <p>Klik lingkaran biru untuk memverifikasi wajah</p>
+                  <img
+                    id="screenshot"
+                    style="
+                      display: none;
+                      border: 1px solid black;
+                      border-radius: 10px;
+                    "
+                  />
+                </div>
+                <div class="form-actions">
+                  <button type="button" class="btn btn-prev">
+                    <i class="bi bi-arrow-left"></i> Kembali
+                  </button>
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    disabled
+                    id="btn-register"
+                  >
+                    <i class="bi bi-check2-circle"></i> Selesaikan Registrasi
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Latar Belakang Dekoratif -->
+          <div class="auth-background">
+            <div class="background-shape shape-1"></div>
+            <div class="background-shape shape-2"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal Konfirmasi -->
+    <div class="modal" id="registration-success-modal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Registrasi Berhasil!</h3>
+            <button class="close">&times;</button>
+          </div>
+          <div class="modal-body">
+            <p>Akun Anda telah dibuat. Silakan login.</p>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" id="login-now">
+              Login Sekarang
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Succcess Login -->
+    <div id="modal-login-success" class="modal-new">
+      <!-- Modal content -->
+      <div class="modal-content-new">
+        <span class="close-new" id="close-new">&times;</span>
+        <p class="login-success" style="font-weight: bold; font-size: 20px">
+          Login Success
+        </p>
+        <div style="margin-top: 10px; margin-bottom: 10px">
+          <p id="login-success-message"></p>
+          <p id="login-time"></p>
+          <!-- Add this line to display login time -->
+        </div>
+      </div>
+    </div>
+    <div id="modal-login-failed" class="modal-new">
+      <!-- Modal content -->
+      <div class="modal-content-new">
+        <span class="close-new" id="close-new">&times;</span>
+        <p style="color: red; font-weight: bold; font-size: 20px">
+          Login Failed
+        </p>
+        <div style="margin-top: 10px; margin-bottom: 10px">
+          <p>Maaf username atau password yang diinput salah!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Script Utama -->
+    <script>
+      document.addEventListener("DOMContentLoaded", async function () {
+        function toTitleCase(str) {
+          return str.replace(
+            /\w\S*/g,
+            (text) =>
+              text.charAt(0).toUpperCase() + text.substring(1).toLowerCase()
+          );
+        }
+        const registrationSteps =
+          document.querySelectorAll(".registration-step");
+        const wizardSteps = document.querySelectorAll(".wizard-step");
+        const nextButtons = document.querySelectorAll(".btn-next");
+        const prevButtons = document.querySelectorAll(".btn-prev");
+        const navItems = document.querySelectorAll(".nav-item");
+        const authForms = document.querySelectorAll(".auth-form");
+        let currentStep = 0;
+        let validPersonalInfo = {
+          name: false,
+          username: false,
+          password: false,
+          confirmPassword: false,
+          whatsapp: false,
+        };
+        let tempPassword = "";
+        let model, video, canvasVideo, ctxVideo;
+        let screenshotElement = document.getElementById("screenshot");
+        let stream;
+
+        let user = {
+          fullname: "",
+          username: "",
+          password: "",
+          whatsapp: "",
+          image: "",
+        };
+
+        function setupNavigation() {
+          navItems.forEach((navItem) => {
+            navItem.addEventListener("click", () => {
+              // Reset active state
+              navItems.forEach((item) => item.classList.remove("active"));
+              authForms.forEach((form) => form.classList.remove("active"));
+
+              // Set active state untuk tab yang dipilih
+              const targetForm = navItem.getAttribute("data-target");
+              navItem.classList.add("active");
+              document
+                .querySelector(`.${targetForm}-form`)
+                .classList.add("active");
+            });
+          });
+        }
+
+        function validateCurrentStep() {
+          const currentStepElement = registrationSteps[currentStep];
+          const inputs = currentStepElement.querySelectorAll("input");
+          let isValid = true;
+
+          for (let i = 0; i < inputs.length; i++) {
+            inputs[i].addEventListener("keyup", function (event) {
+              if (!validateInput(inputs[i])) {
+                isValid = false;
+              }
+              if (
+                validPersonalInfo.name === true &&
+                validPersonalInfo.username === true &&
+                validPersonalInfo.password === true &&
+                validPersonalInfo.confirmPassword === true &&
+                validPersonalInfo.whatsapp === true
+              ) {
+                document.querySelector(
+                  '[data-current="step-personal-info"]'
+                ).disabled = false;
+              } else {
+                document.querySelector(
+                  '[data-current="step-personal-info"]'
+                ).disabled = true;
+              }
+            });
+          }
+
+          return isValid;
+        }
+
+        function updateWizardSteps(step) {
+          wizardSteps.forEach((wizardStep, index) => {
+            if (index <= step) {
+              wizardStep.classList.add("active");
+            } else {
+              wizardStep.classList.remove("active");
+            }
+          });
+
+          registrationSteps.forEach((registrationStep, index) => {
+            registrationStep.classList.toggle("active", index === step);
+          });
+        }
+
+        // Setup Navigasi Wizard
+        function setupWizardNavigation() {
+          nextButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+              if (validateCurrentStep()) {
+                registrationSteps[currentStep].classList.add("hide-step");
+                registrationSteps[currentStep + 1].classList.remove(
+                  "hide-step"
+                );
+                currentStep++;
+                updateWizardSteps(currentStep);
+              }
+            });
+          });
+
+          prevButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+              registrationSteps[currentStep].classList.add("hide-step");
+              registrationSteps[currentStep - 1].classList.remove("hide-step");
+              currentStep--;
+              updateWizardSteps(currentStep);
+            });
+          });
+        }
+
+        // UTILS FUNCTION
+
+        // Input Validation
+        function validateInput(input) {
+          const errorElement = document.getElementById(`${input.name}-error`);
+
+          let isValid = true;
+          // Hapus pesan error sebelumnya
+          errorElement.textContent = "";
+
+          // Cek input kosong
+          if (!input.value.trim()) {
+            errorElement.textContent = "Kolom ini wajib diisi";
+            return false;
+          }
+
+          // Validasi spesifik berdasarkan ID input
+          switch (input.id) {
+            case "register-fullname":
+              if (input.value.length < 3) {
+                errorElement.textContent = "Nama lengkap minimal 3 karakter";
+                isValid = false;
+              } else {
+                input.value = toTitleCase(input.value);
+                validPersonalInfo.name = true;
+              }
+              break;
+            case "register-username":
+              const usernameRegex = /^[a-z0-9]{3,20}$/;
+              if (!usernameRegex.test(input.value)) {
+                errorElement.textContent =
+                  "Username 3-20 karakter, hanya huruf kecil dan angka";
+                isValid = false;
+              } else {
+                input.value = input.value.toLowerCase().replace(" ", "");
+                validPersonalInfo.username = true;
+              }
+
+              break;
+            case "register-password":
+              const passwordRegex =
+                /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{6,20}$/;
+              if (!passwordRegex.test(input.value)) {
+                errorElement.textContent =
+                  "Password min 6 karakter, huruf besar, huruf kecil, angka, dan karakter khusus";
+                isValid = false;
+              } else {
+                validPersonalInfo.password = true;
+                tempPassword = input.value;
+              }
+              break;
+            case "register-confirm-password":
+              if (tempPassword.length === 0) {
+                errorElement.textContent =
+                  "Mohon isi password sesuai ketentuan terlebih dahulu!";
+                isValid = false;
+              } else if (input.value !== tempPassword) {
+                errorElement.textContent = "Konfirmasi password tidak sama";
+                isValid = false;
+              } else {
+                validPersonalInfo.confirmPassword = true;
+              }
+              break;
+            case "register-whatsapp":
+              const whatsappRegex = /^(?:\+?62|62|0)[1-9][0-9]{8,11}$/;
+              // Verifikasi jika nomor valid setelah diubah
+              let formattedNumber = input.value.replace(/\D/g, "");
+              if (formattedNumber.startsWith("0")) {
+                formattedNumber = "62" + formattedNumber.slice(1);
+                input.value = formattedNumber; // Mengembalikan nomor yang sudah diformat
+              }
+              if (
+                !formattedNumber.startsWith("62") &&
+                !formattedNumber.startsWith("0")
+              ) {
+                input.value = "62" + formattedNumber;
+              }
+              if (whatsappRegex.test(formattedNumber)) {
+                validPersonalInfo.whatsapp = true;
+              } else {
+                errorElement.textContent = "Nomor WhatsApp tidak valid";
+                isValid = false;
+              }
+              break;
+          }
+
+          return isValid;
+        }
+
+        function toggleRegisterPassword() {
+          document
+            .getElementById("toggle-register-password")
+            .addEventListener("click", function () {
+              const registerPassword =
+                document.querySelector("#register-password");
+              if (registerPassword.type === "password") {
+                registerPassword.type = "text";
+              } else {
+                registerPassword.type = "password";
+              }
+            });
+        }
+        function toggleConfirmPassword() {
+          document
+            .getElementById("toggle-register-confirm-password")
+            .addEventListener("click", function () {
+              const registerPassword = document.querySelector(
+                "#register-confirm-password"
+              );
+              if (registerPassword.type === "password") {
+                registerPassword.type = "text";
+              } else {
+                registerPassword.type = "password";
+              }
+            });
+        }
+        function togglePassword() {
+          document
+            .getElementById("toggle-password")
+            .addEventListener("click", function () {
+              const registerPassword =
+                document.querySelector("#login-password");
+              if (registerPassword.type === "password") {
+                registerPassword.type = "text";
+              } else {
+                registerPassword.type = "password";
+              }
+            });
+        }
+        function setupPhotoUpload() {
+          const photoInput = document.getElementById("register-photo");
+          const photoPreview = document.getElementById("photo-preview");
+          const nextPhotoButton = document.querySelector(
+            "#step-upload-photo .btn-next"
+          );
+
+          photoInput.addEventListener("change", async (e) => {
+            console.log("Upload");
+            const file = e.target.files[0];
+            const fileSize = file.size / 1000;
+            if (fileSize < 50 || fileSize > 500) {
+              document.getElementById("invalid-photo").textContent =
+                "Photo tidak sesuai ketentuan. ukuran file harus berkisar antara 50 - 500KB";
+              photoPreview.src = "";
+              nextPhotoButton.disabled = true;
+
+              return;
+            }
+            if (!["image/jpg", "image/jpeg"].includes(file.type)) {
+              document.getElementById("invalid-photo").textContent =
+                "Photo tidak sesuai ketentuan. image type hanya menerima JPG/JPEG";
+              photoPreview.src = "";
+              nextPhotoButton.disabled = true;
+
+              return;
+            }
+            document.getElementById("invalid-photo").textContent = "";
+
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = async (event) => {
+                photoPreview.src = event.target.result;
+                user.image = event.target.result;
+                try {
+                  const img = new Image();
+                  img.src = event.target.result;
+                  img.width = 300;
+                  img.height = 300;
+
+                  img.onload = async () => {
+                    detectAndDrawFaces(img);
+                  };
+                } catch (error) {
+                  console.error("Face detection error:", error);
+                  document.getElementById("invalid-recog").innerHTML =
+                    "<p>Muka tidak terdeteksi, silahkan pakai gambar JPG lainnya!.</br>Tidak ada wajah terdeteksi dalam gambar yang anda upload</p>";
+
+                  nextPhotoButton.disabled = true;
+                }
+              };
+              reader.readAsDataURL(file);
+            }
+            nextPhotoButton.disabled = false;
+          });
+        }
+        async function detectAndDrawFaces(image) {
+          const canvas = document.getElementById("canvas");
+          const ctx = canvas.getContext("2d");
+
+          // Gambar gambar ke canvas
+          canvas.width = image.width;
+          canvas.height = image.height;
+          ctx.drawImage(image, 0, 0, image.width, image.height);
+
+          // Deteksi wajah
+          const predictions = await model.estimateFaces(image, false);
+
+          if (predictions.length === 1) {
+            // document.getElementById("btn-register").disabled = false;
+            // document.getElementById("btn-register").classList.add("active");
+            const confidence = (predictions[0].probability[0] * 100).toFixed(2);
+            document.getElementById("invalid-recog").innerHTML = `<div>
+      <p style="color:blue;font-weight:bold;text-align:center">Wajah Terdeteksi</p>
+      <div style="display:flex;flex-direction:column; gap:4px">
+      <div style="display:flex;gap:5px">
+        <p width="100px">Persentasi Keberhasilan</p>
+        <p width="20px">:</p>
+        <p>${confidence}%</p>
+      </div>
+      </div>
+      </div>`;
+          } else {
+            // document.getElementById("btn-register").disabled = true;
+            document.getElementById(
+              "invalid-recog"
+            ).innerHTML = `<p style="text-align:center;color:red">Muka tidak terdeteksi, silahkan pakai gambar JPG lainnya!<br/>Tidak ada wajah terdeteksi dalam gambar yang anda upload</p>`;
+          }
+          // Gambar border di sekitar wajah yang terdeteksi
+          predictions.forEach((prediction) => {
+            const start = prediction.topLeft;
+            const end = prediction.bottomRight;
+
+            // Gambar rectangle (border)
+            ctx.beginPath();
+            ctx.rect(start[0], start[1], end[0] - start[0], end[1] - start[1]);
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = "green";
+            ctx.stroke();
+          });
+        }
+        async function loadModel() {
+          model = await blazeface.load();
+        }
+        function setupFormSubmissions() {
+          const loginForm = document.getElementById("login-form");
+          const registerForm = document.getElementById("register-form");
+          const registrationSuccessModal = document.getElementById(
+            "registration-success-modal"
+          );
+          const modalCloseButton =
+            registrationSuccessModal.querySelector(".close");
+
+          loginForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const username = document.getElementById("login-username").value;
+            const password = document.getElementById("login-password").value;
+
+            if (username.toLowerCase() !== user.username) {
+              document.getElementById("modal-login-failed").style.display =
+                "block";
+              return;
+            }
+            if (password !== user.password) {
+              document.getElementById("modal-login-failed").style.display =
+                "block";
+              return;
+            }
+
+            document.getElementById("modal-login-success").style.display =
+              "block";
+          });
+
+          registerForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+
+            // Kumpulkan data registrasi
+            const formData = {
+              fullname: document.getElementById("register-fullname").value,
+              username: document.getElementById("register-username").value,
+              password: document.getElementById("register-password").value,
+              whatsapp: document.getElementById("register-whatsapp").value,
+              profilePhoto: document.getElementById("photo-preview").src,
+            };
+            user = {
+              ...user,
+              fullname: formData.fullname,
+              username: formData.username,
+              password: formData.password,
+              whatsapp: formData.whatsapp,
+            };
+
+            console.log("Data Registrasi:", formData);
+            registrationSuccessModal.style.display = "flex";
+          });
+
+          // Tutup modal
+          modalCloseButton.addEventListener("click", () => {
+            registrationSuccessModal.style.display = "none";
+          });
+
+          // Handler untuk tombol login sosial
+          const socialLoginButtons = document.querySelectorAll(".btn-social");
+          socialLoginButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+              alert("Login media sosial belum tersedia");
+            });
+          });
+        }
+
+        async function DetectVideo() {
+          video = document.getElementById("video");
+          video.width = 600;
+          video.height = 400;
+
+          // Setup canvas for drawing
+          canvasVideo = document.getElementById("canvasVideo");
+          canvasVideo.width = video.width;
+          canvasVideo.height = video.height;
+          ctxVideo = canvasVideo.getContext("2d");
+
+          // Access the webcam and start the video stream
+          document
+            .getElementById("start-video")
+            .addEventListener("click", async () => {
+              stream = await navigator.mediaDevices.getUserMedia({
+                video: true,
+              });
+              video.srcObject = stream;
+            });
+
+          // Call the detect function
+          video.addEventListener("loadeddata", () => {
+            detectFace();
+          });
+        }
+        async function detectFace() {
+          // Continuously detect faces in the video
+          const predictions = await model.estimateFaces(video, false);
+
+          // Clear previous drawings on canvas
+          ctxVideo.clearRect(0, 0, canvasVideo.width, canvasVideo.height);
+          ctxVideo.drawImage(
+            video,
+            0,
+            0,
+            canvasVideo.width,
+            canvasVideo.height
+          );
+          // If any faces are detected
+          if (predictions.length > 0) {
+            document.getElementById("take-photo").style.display = "flex";
+            predictions.forEach((prediction) => {
+              const start = prediction.topLeft;
+              const end = prediction.bottomRight;
+
+              // Draw rectangle around the face
+              ctxVideo.beginPath();
+              ctxVideo.rect(
+                start[0],
+                start[1],
+                end[0] - start[0],
+                end[1] - start[1]
+              );
+              ctxVideo.lineWidth = 2;
+              ctxVideo.strokeStyle = "green";
+              ctxVideo.fillStyle = "green";
+              ctxVideo.stroke();
+              ctxVideo.fillText("Wajah Terdeteksi", start[0], start[1] - 10);
+
+              // return takeSnapshot();
+            });
+          }
+
+          // Repeat the detection process
+          requestAnimationFrame(detectFace);
+        }
+        function takeSnapshot() {
+          document
+            .getElementById("take-photo")
+            .addEventListener("click", () => {
+              // Capture the current frame from the canvas as an image
+              const dataUrl = canvasVideo.toDataURL("image/png");
+              document.getElementById("video").style.display = "none";
+              document.getElementById("canvasVideo").style.display = "none";
+              document.getElementById("take-photo").style.display = "none";
+              document.getElementById("take-photo-wrap").style.display = "none";
+
+              // Display the captured image
+              screenshotElement.src = dataUrl;
+              screenshotElement.style.display = "block"; // Show the image
+              document.getElementById("btn-register").disabled = false;
+              document.getElementById("btn-register").classList.add("active");
+              const tracks = stream.getTracks();
+              tracks.forEach((track) => track.stop()); // Stop all tracks of the stream
+              // const video = document.getElementById('video');
+              video.srcObject = null; // Disconnect video from the stream
+              document.getElementById("start-video").style.display = "none";
+            });
+        }
+        function login() {
+          document.querySelectorAll(".close-new").forEach((cl) => {
+            cl.addEventListener("click", () => {
+              document.querySelectorAll(".modal-new").forEach((e) => {
+                e.style.display = "none";
+              });
+            });
+          });
+          document
+            .getElementById("start-login")
+            .addEventListener("click", () => {
+              const username = document.getElementById("login-username").value;
+              const password = document.getElementById("login-password").value;
+              if (username.toLowerCase() !== user.username) {
+                document.getElementById("modal-login-failed").style.display =
+                  "block";
+                return;
+              }
+              if (password !== user.password) {
+                document.getElementById("modal-login-failed").style.display =
+                  "block";
+                return;
+              }
+
+              const loginTime = new Date().toLocaleString(); // Get current date and time
+              document.getElementById(
+                "login-time"
+              ).innerText = `Login Time: ${loginTime}`; // Display login time
+
+              document.getElementById("modal-login-success").style.display =
+                "block";
+              document.getElementById(
+                "login-success-message"
+              ).innerHTML = `<span>Halo ${user.fullname}!, anda telah login ke akun anda</span></br><span>Nomor Whatsapp : ${user.whatsapp}</span>`;
+            });
+        }
+
+        function navigateToLogin() {
+          document.getElementById("login-now").addEventListener("click", () => {
+            user = {
+              fullname: document.getElementById("register-fullname").value,
+              username: document.getElementById("register-username").value,
+              password: document.getElementById("register-password").value,
+              whatsapp: document.getElementById("register-whatsapp").value,
+              image: document.getElementById("photo-preview").src,
+            };
+            document
+              .querySelector('[data-target="login"]')
+              .classList.add("active");
+            document.getElementById("login-form").classList.add("active");
+            document.getElementById(
+              "registration-success-modal"
+            ).style.display = "none";
+            document
+              .querySelector('[data-target="register"]')
+              .classList.remove("active");
+            document.getElementById("register-form").classList.remove("active");
+          });
+        }
+        function navigateToRegis() {
+          document.getElementById("goToRegis").addEventListener("click", () => {
+            document
+              .querySelector('[data-target="register"]')
+              .classList.add("active");
+            document.getElementById("register-form").classList.add("active");
+            // document.getElementById(
+            //   "registration-success-modal"
+            // ).style.display = "none";
+            document
+              .querySelector('[data-target="login"]')
+              .classList.remove("active");
+            document.getElementById("login-form").classList.remove("active");
+          });
+        }
+
+        await loadModel();
+        validateCurrentStep();
+        setupWizardNavigation();
+        setupNavigation();
+        toggleRegisterPassword();
+        toggleConfirmPassword();
+        togglePassword();
+        setupPhotoUpload();
+        setupFormSubmissions();
+        DetectVideo();
+        takeSnapshot();
+        login();
+        navigateToLogin();
+        navigateToRegis();
+
+        // Ensure that the username input cannot contain spaces
+        document
+          .getElementById("register-username")
+          .addEventListener("input", function () {
+            this.value = this.value.toLowerCase().replace(/\s/g, "");
+          });
+        document
+          .getElementById("login-username")
+          .addEventListener("input", function () {
+            this.value = this.value.toLowerCase().replace(/\s/g, "");
+          });
+      });
+      function capitalizeWords(input) {
+        input.value = input.value.replace(/\b\w/g, function (char) {
+          return char.toUpperCase();
+        });
+      }
+    </script>
+  </body>
+</html>
